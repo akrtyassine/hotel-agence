@@ -1,0 +1,218 @@
+﻿<app-header />
+
+<div class="min-h-screen bg-warm-50">
+
+  <!-- Page header -->
+  <div class="bg-warm-900 text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-5"
+         style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
+    <div class="relative z-10 max-w-6xl mx-auto">
+      <span class="text-primary-300 text-sm font-semibold uppercase tracking-widest">Destination</span>
+      <h1 class="font-display text-4xl font-bold mt-2 mb-3">Tous nos hôtels</h1>
+      <p class="text-warm-300 text-lg">
+        @if (!loading()) {
+          {{ filtered().length }} hôtel{{ filtered().length !== 1 ? 's' : '' }} disponible{{ filtered().length !== 1 ? 's' : '' }}
+        } @else {
+          Chargement...
+        }
+      </p>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="flex flex-col lg:flex-row gap-8">
+
+      <!-- Filters sidebar -->
+      <aside class="lg:w-64 shrink-0">
+        <div class="bg-white rounded-2xl shadow-sm border border-warm-200 p-6 sticky top-24">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="font-semibold text-warm-900">Filtres</h2>
+            <button (click)="clearFilters()"
+                    class="text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors">
+              Réinitialiser
+            </button>
+          </div>
+
+          <!-- Search -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-warm-600 uppercase tracking-wider mb-2">Recherche</label>
+            <div class="relative">
+              <input type="text"
+                     [ngModel]="searchQuery()"
+                     (ngModelChange)="onSearch($event)"
+                     placeholder="Nom, ville..."
+                     class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 text-sm placeholder-warm-400 focus:outline-none focus:ring-2 focus:ring-primary-300">
+              <svg class="absolute left-2.5 top-3 w-4 h-4 text-warm-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- City filter -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-warm-600 uppercase tracking-wider mb-2">Ville</label>
+            <select [ngModel]="selectedCity()"
+                    (ngModelChange)="setCity($event)"
+                    class="w-full py-2.5 px-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+              <option value="">Toutes les villes</option>
+              @for (city of cities(); track city) {
+                <option [value]="city">{{ city }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Max price -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-warm-600 uppercase tracking-wider mb-2">
+              Prix max / nuit {{ maxPrice() !== null ? '— ' + maxPrice() + '€' : '' }}
+            </label>
+            <input type="number"
+                   [ngModel]="maxPrice()"
+                   (ngModelChange)="setMaxPrice($event || null)"
+                   placeholder="Ex: 200"
+                   min="1"
+                   class="w-full py-2.5 px-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 text-sm placeholder-warm-400 focus:outline-none focus:ring-2 focus:ring-primary-300">
+          </div>
+
+          <!-- Sort -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-warm-600 uppercase tracking-wider mb-2">Trier par</label>
+            <select [ngModel]="sortBy()"
+                    (ngModelChange)="setSortBy($event)"
+                    class="w-full py-2.5 px-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+              <option value="name">Nom (A → Z)</option>
+              <option value="price_asc">Prix croissant</option>
+              <option value="price_desc">Prix décroissant</option>
+            </select>
+          </div>
+
+          <!-- Promo filter -->
+          <div>
+            <label class="block text-xs font-semibold text-warm-600 uppercase tracking-wider mb-2">Promotions</label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox"
+                     [ngModel]="onlyWithPromo()"
+                     (ngModelChange)="onlyWithPromo.set($event); currentPage.set(1)"
+                     class="w-4 h-4 rounded border-warm-300 accent-primary-500 cursor-pointer">
+              <span class="text-sm text-warm-700 group-hover:text-primary-600 transition-colors">Avec promotion uniquement</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Results grid -->
+      <main class="flex-1">
+        @if (loading()) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-warm-100 animate-pulse">
+                <div class="h-44 bg-warm-200"></div>
+                <div class="p-5 space-y-3">
+                  <div class="h-5 bg-warm-200 rounded w-3/4"></div>
+                  <div class="h-4 bg-warm-100 rounded w-1/2"></div>
+                  <div class="h-8 bg-warm-100 rounded w-1/3"></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (filtered().length === 0) {
+          <div class="flex flex-col items-center justify-center py-24 text-center">
+            <div class="w-20 h-20 bg-warm-100 rounded-full flex items-center justify-center mb-4 text-3xl">🏨</div>
+            <h3 class="font-display text-xl font-semibold text-warm-800 mb-2">Aucun hôtel trouvé</h3>
+            <p class="text-warm-700 mb-6">Essayez de modifier vos critères de recherche.</p>
+            <button (click)="clearFilters()"
+                    class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold transition-colors">
+              Réinitialiser les filtres
+            </button>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @for (hotel of paginatedHotels(); track hotel.id; let i = $index) {
+              <a [routerLink]="['/hotels', hotel.id]"
+                 class="block bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-warm-100 group">
+                <div class="h-44 relative flex items-end p-4"
+                     [style.background]="hotel.imageUrl ? '' : getHotelGradient(i)">
+                  @if (hotel.imageUrl) {
+                    <img [src]="hotel.imageUrl!.startsWith('http') ? hotel.imageUrl! : 'http://localhost:8082' + hotel.imageUrl!" [alt]="hotel.name"
+                         class="absolute inset-0 w-full h-full object-cover">
+                  }
+                  @if (getActivePromo(hotel); as promo) {
+                    <span class="absolute top-3 right-3 z-10 flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                      🏷 -{{ promo.discountPercent }}%
+                    </span>
+                  }
+                  <span class="relative z-10 bg-white/95 px-3 py-1 rounded-full text-sm font-semibold text-warm-700 shadow-sm">
+                    📍 {{ hotel.city }}
+                  </span>
+                </div>
+                <div class="p-6">
+                  <h3 class="font-display text-xl font-semibold text-warm-900 mb-1 group-hover:text-primary-500 transition-colors">
+                    {{ hotel.name }}
+                  </h3>
+                  <p class="text-warm-600 text-sm mb-5 truncate">{{ hotel.address }}</p>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      @if (getActivePromo(hotel)) {
+                        <span class="text-sm text-warm-400 line-through">{{ hotel.pricePerNight | number:'1.0-0' }}€</span>
+                        <br>
+                        <span class="text-2xl font-bold text-green-600">{{ getDiscountedPrice(hotel) | number:'1.0-0' }}€</span>
+                        <span class="text-warm-600 text-sm"> / nuit</span>
+                      } @else {
+                        <span class="text-2xl font-bold text-primary-500">{{ hotel.pricePerNight | number:'1.0-0' }}€</span>
+                        <span class="text-warm-600 text-sm"> / nuit</span>
+                      }
+                    </div>
+                    <span class="inline-flex items-center gap-1 px-4 py-2 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold group-hover:bg-primary-500 group-hover:text-white transition-all">
+                      Voir
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+
+          <!-- Pagination -->
+          @if (totalPages() > 1) {
+            <div class="flex items-center justify-center gap-2 mt-10 flex-wrap">
+              <button (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+                      class="flex items-center gap-1 px-4 py-2 rounded-xl border border-warm-200 text-warm-600 text-sm font-medium
+                             hover:bg-warm-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Précédent
+              </button>
+
+              @for (page of pageNumbers(); track page) {
+                <button (click)="goToPage(page)"
+                        [class]="page === currentPage()
+                          ? 'w-10 h-10 rounded-xl bg-primary-500 text-white font-bold text-sm shadow-sm shadow-primary-200'
+                          : 'w-10 h-10 rounded-xl border border-warm-200 text-warm-600 text-sm font-medium hover:bg-warm-100 transition-colors'">
+                  {{ page }}
+                </button>
+              }
+
+              <button (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()"
+                      class="flex items-center gap-1 px-4 py-2 rounded-xl border border-warm-200 text-warm-600 text-sm font-medium
+                             hover:bg-warm-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                Suivant
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+
+            <p class="text-center text-warm-600 text-xs mt-3">
+              Page {{ currentPage() }} sur {{ totalPages() }} &bull; {{ filtered().length }} hôtel{{ filtered().length !== 1 ? 's' : '' }} au total
+            </p>
+          }
+        }
+      </main>
+    </div>
+  </div>
+</div>
+
+<app-footer />

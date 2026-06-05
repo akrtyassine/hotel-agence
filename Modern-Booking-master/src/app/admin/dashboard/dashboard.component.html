@@ -1,0 +1,165 @@
+﻿@if (loading()) {
+  <div class="flex items-center justify-center py-24">
+    <svg class="w-10 h-10 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    </svg>
+  </div>
+} @else {
+  <!-- Stat cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+    <!-- Hotels -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-100 flex items-center gap-5">
+      <div class="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center shrink-0">
+        <svg class="w-7 h-7 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline stroke-linecap="round" stroke-linejoin="round" stroke-width="2" points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-display text-3xl font-bold text-warm-900">{{ stats().hotels }}</div>
+        <div class="text-warm-700 text-sm mt-0.5">Hôtels</div>
+      </div>
+    </div>
+
+    <!-- Clients -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-100 flex items-center gap-5">
+      <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
+        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-display text-3xl font-bold text-warm-900">{{ stats().clients }}</div>
+        <div class="text-warm-700 text-sm mt-0.5">Clients</div>
+      </div>
+    </div>
+
+    <!-- Reservations -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-100 flex items-center gap-5">
+      <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center shrink-0">
+        <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect width="18" height="18" x="3" y="4" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          <line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          <line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-display text-3xl font-bold text-warm-900">{{ stats().reservations }}</div>
+        <div class="text-warm-700 text-sm mt-0.5">Réservations</div>
+      </div>
+    </div>
+
+    <!-- Avg rating -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-100 flex items-center gap-5">
+      <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+        <svg class="w-7 h-7 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-display text-3xl font-bold text-warm-900">{{ stats().avgRating }}/5</div>
+        <div class="text-warm-700 text-sm mt-0.5">Note moyenne</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue -->
+  <div class="bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl p-8 mb-8 text-white flex items-center justify-between">
+    <div>
+      <div class="text-white text-sm font-semibold uppercase tracking-widest mb-2">Revenus totaux</div>
+      <div class="font-display text-4xl font-bold">{{ stats().totalRevenue | number:'1.2-2' }}€</div>
+      <div class="text-white\/80 text-sm mt-1">Basé sur {{ stats().reservations }} réservations</div>
+    </div>
+    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Quick actions + Recent reservations -->
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    <!-- Quick actions -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-warm-100">
+      <h2 class="font-semibold text-warm-900 mb-4">Actions rapides</h2>
+      <div class="space-y-2">
+        <a routerLink="/admin/hotels" class="flex items-center gap-3 p-3 rounded-xl hover:bg-primary-50 transition-colors group">
+          <div class="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-primary-200">
+            <svg class="w-[18px] h-[18px] text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-warm-700">Ajouter un hôtel</span>
+        </a>
+        <a routerLink="/admin/clients" class="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors group">
+          <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-blue-100">
+            <svg class="w-[18px] h-[18px] text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-warm-700">Ajouter un client</span>
+        </a>
+        <a routerLink="/admin/reservations" class="flex items-center gap-3 p-3 rounded-xl hover:bg-green-50 transition-colors group">
+          <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-green-100">
+            <svg class="w-[18px] h-[18px] text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-warm-700">Nouvelle réservation</span>
+        </a>
+        <a routerLink="/admin/promotions" class="flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 transition-colors group">
+          <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-amber-100">
+            <svg class="w-[18px] h-[18px] text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-warm-700">Créer une promotion</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent reservations -->
+    <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-warm-100 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-warm-100">
+        <h2 class="font-semibold text-warm-900">Réservations récentes</h2>
+        <a routerLink="/admin/reservations" class="text-sm text-primary-500 hover:text-primary-700 font-medium transition-colors">
+          Voir tout →
+        </a>
+      </div>
+      @if (recentReservations().length === 0) {
+        <div class="text-center py-12 text-warm-600">
+          <p>Aucune réservation pour le moment.</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-warm-50 border-b border-warm-100">
+              <tr>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-warm-700 uppercase tracking-wider">Client</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-warm-700 uppercase tracking-wider">Hôtel</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-warm-700 uppercase tracking-wider hidden md:table-cell">Arrivée</th>
+                <th class="text-right px-6 py-3 text-xs font-semibold text-warm-700 uppercase tracking-wider">Montant</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-warm-100">
+              @for (r of recentReservations(); track r.id) {
+                <tr class="hover:bg-warm-50 transition-colors">
+                  <td class="px-6 py-4 font-medium text-warm-900">{{ getReservationClient(r) }}</td>
+                  <td class="px-6 py-4 text-warm-600">{{ getReservationHotel(r) }}</td>
+                  <td class="px-6 py-4 text-warm-700 hidden md:table-cell">{{ r.checkInDate | date:'dd/MM/yyyy' }}</td>
+                  <td class="px-6 py-4 text-right font-semibold text-primary-500">{{ r.totalPrice | number:'1.2-2' }}€</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}

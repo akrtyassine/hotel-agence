@@ -1,0 +1,162 @@
+﻿<app-header />
+
+<div class="min-h-screen bg-warm-50">
+
+  <!-- Page header -->
+  <div class="bg-warm-900 text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-5"
+         style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
+    <div class="relative z-10 max-w-6xl mx-auto">
+      <span class="text-primary-300 text-sm font-semibold uppercase tracking-widest">Offres exclusives</span>
+      <h1 class="font-display text-4xl font-bold mt-2 mb-3">Promotions & Réductions</h1>
+      <p class="text-warm-300 text-lg">
+        @if (!loading()) {
+          {{ activePromotions().length }} promotion{{ activePromotions().length !== 1 ? 's' : '' }} active{{ activePromotions().length !== 1 ? 's' : '' }} en ce moment
+        } @else {
+          Chargement...
+        }
+      </p>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+    @if (loading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-warm-100 animate-pulse">
+            <div class="h-36 bg-primary-200"></div>
+            <div class="p-6 space-y-3">
+              <div class="h-5 bg-warm-200 rounded w-3/4"></div>
+              <div class="h-4 bg-warm-100 rounded w-1/2"></div>
+              <div class="h-8 bg-warm-100 rounded w-1/3"></div>
+            </div>
+          </div>
+        }
+      </div>
+
+    } @else if (activePromotions().length === 0 && upcomingPromotions().length === 0) {
+      <div class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="w-20 h-20 bg-warm-100 rounded-full flex items-center justify-center mb-4 text-3xl">🏷</div>
+        <h3 class="font-display text-xl font-semibold text-warm-800 mb-2">Aucune promotion disponible</h3>
+        <p class="text-warm-700 mb-6">Revenez bientôt pour découvrir nos offres exclusives.</p>
+        <a routerLink="/hotels"
+           class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold transition-colors">
+          Voir tous les hôtels
+        </a>
+      </div>
+
+    } @else {
+
+      <!-- Active promotions -->
+      @if (activePromotions().length > 0) {
+        <div class="mb-14">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+            <h2 class="font-display text-2xl font-bold text-warm-900">Promotions actives</h2>
+            <span class="px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+              {{ activePromotions().length }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (promo of activePromotions(); track promo.id; let i = $index) {
+              <div class="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-warm-100 group">
+                <!-- Image / gradient with badge -->
+                <div class="h-48 relative flex items-end p-4"
+                     [style.background]="getHotel(promo)?.imageUrl ? '' : getGradient(i)">
+                  @if (getHotel(promo)?.imageUrl) {
+                    <img [src]="imgSrc(getHotel(promo)!.imageUrl!)" [alt]="getHotel(promo)!.name"
+                         class="absolute inset-0 w-full h-full object-cover">
+                  }
+                  <!-- Big discount badge -->
+                  <div class="absolute top-4 right-4 z-10 bg-red-500 text-white rounded-2xl px-3 py-2 text-center shadow-lg">
+                    <div class="text-2xl font-bold leading-none">-{{ promo.discountPercent }}%</div>
+                    <div class="text-xs opacity-80 mt-0.5">réduction</div>
+                  </div>
+                  <div class="absolute top-4 left-4 z-10 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-white text-xs font-mono font-bold tracking-wider border border-white/30">
+                    {{ promo.code }}
+                  </div>
+                  @if (getHotel(promo)) {
+                    <span class="relative z-10 bg-white/95 px-3 py-1 rounded-full text-sm font-semibold text-warm-700 shadow-sm">
+                      📍 {{ getHotel(promo)!.city }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Content -->
+                <div class="p-6">
+                  <h3 class="font-display text-lg font-semibold text-warm-900 mb-0.5 group-hover:text-primary-500 transition-colors">
+                    {{ getHotel(promo)?.name ?? 'Hôtel' }}
+                  </h3>
+                  <p class="text-warm-700 text-xs mb-4">
+                    Valable jusqu'au {{ promo.endDate | date:'dd/MM/yyyy' }}
+                  </p>
+
+                  @if (getHotel(promo)) {
+                    <div class="flex items-center gap-2 mb-5">
+                      <span class="text-sm text-warm-400 line-through">{{ getHotel(promo)!.pricePerNight | number:'1.0-0' }}€ / nuit</span>
+                      <span class="text-xl font-bold text-green-600">{{ getDiscountedPrice(promo) | number:'1.0-0' }}€</span>
+                      <span class="text-warm-600 text-sm">/ nuit</span>
+                    </div>
+                  }
+
+                  <a [routerLink]="['/hotels', getHotelId(promo)]"
+                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-sm font-semibold transition-colors w-full justify-center">
+                    Réserver maintenant
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Upcoming promotions -->
+      @if (upcomingPromotions().length > 0) {
+        <div>
+          <div class="flex items-center gap-3 mb-6">
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <h2 class="font-display text-2xl font-bold text-warm-900">Promotions à venir</h2>
+            <span class="px-2.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
+              {{ upcomingPromotions().length }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (promo of upcomingPromotions(); track promo.id; let i = $index) {
+              <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-warm-100 opacity-80">
+                <div class="h-32 relative flex items-end p-4"
+                     [style.background]="getHotel(promo)?.imageUrl ? '' : getGradient(i + 3)">
+                  @if (getHotel(promo)?.imageUrl) {
+                    <img [src]="imgSrc(getHotel(promo)!.imageUrl!)" [alt]="getHotel(promo)!.name"
+                         class="absolute inset-0 w-full h-full object-cover">
+                  }
+                  <div class="absolute top-4 right-4 bg-amber-500 text-white rounded-2xl px-3 py-2 text-center shadow">
+                    <div class="text-xl font-bold leading-none">-{{ promo.discountPercent }}%</div>
+                    <div class="text-xs opacity-80 mt-0.5">bientôt</div>
+                  </div>
+                </div>
+                <div class="p-5">
+                  <h3 class="font-semibold text-warm-900 mb-1">{{ getHotel(promo)?.name ?? 'Hôtel' }}</h3>
+                  <p class="text-warm-700 text-sm">
+                    Du {{ promo.startDate | date:'dd/MM/yyyy' }} au {{ promo.endDate | date:'dd/MM/yyyy' }}
+                  </p>
+                  <div class="mt-3 inline-flex items-center gap-1.5 text-xs font-mono font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                    {{ promo.code }}
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    }
+  </div>
+</div>
+
+<app-footer />

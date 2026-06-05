@@ -1,0 +1,237 @@
+﻿<app-header />
+
+<div class="min-h-screen bg-warm-50 py-12 px-4 sm:px-6">
+  <div class="max-w-2xl mx-auto">
+
+    <!-- Confirmation success -->
+    @if (confirmed()) {
+      <div class="bg-white rounded-3xl shadow-xl border border-warm-200 p-12 text-center">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <h1 class="font-display text-3xl font-bold text-warm-900 mb-4">Réservation confirmée !</h1>
+        <p class="text-warm-700 text-lg mb-2">
+          Votre séjour à <strong class="text-warm-800">{{ selectedHotel()?.name }}</strong> est réservé.
+        </p>
+        <p class="text-warm-700 mb-10">
+          Du <strong>{{ form.get('checkInDate')?.value | date:'dd/MM/yyyy' }}</strong>
+          au <strong>{{ form.get('checkOutDate')?.value | date:'dd/MM/yyyy' }}</strong>
+          · <strong class="text-primary-500">{{ discountedPrice() | number:'1.2-2' }}€</strong> au total
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a routerLink="/" class="px-8 py-3.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold transition-colors">
+            Retour à l'accueil
+          </a>
+          <a routerLink="/hotels" class="px-8 py-3.5 border-2 border-primary-300 text-primary-600 rounded-xl font-semibold hover:bg-primary-50 transition-colors">
+            Explorer d'autres hôtels
+          </a>
+        </div>
+      </div>
+
+    } @else {
+      <!-- Page title -->
+      <div class="text-center mb-10">
+        <h1 class="font-display text-4xl font-bold text-warm-900 mb-3">Réserver un séjour</h1>
+        <p class="text-warm-700">Complétez les étapes pour finaliser votre réservation.</p>
+      </div>
+
+      <!-- Progress steps (2 steps) -->
+      <div class="flex items-center justify-between mb-10 relative max-w-xs mx-auto">
+        <div class="absolute top-5 left-0 right-0 h-px bg-warm-200 -z-0"></div>
+        @for (s of [1,2]; track s) {
+          <div class="flex flex-col items-center gap-1.5 z-10">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all"
+                 [class]="step() > s ? 'bg-green-500 border-green-500 text-white' : step() === s ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white border-warm-300 text-warm-600'">
+              @if (step() > s) { ✓ } @else { {{ s }} }
+            </div>
+            <span class="text-xs font-medium text-warm-700 hidden sm:block">
+              @if (s === 1) { Hôtel & dates } @else { Confirmation }
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- Card wrapper -->
+      <div class="bg-white rounded-3xl shadow-xl border border-warm-200 overflow-hidden">
+        <form [formGroup]="form">
+
+          <!-- ── STEP 1: Hotel & Dates ── -->
+          @if (step() === 1) {
+            <div class="p-8">
+              <h2 class="font-display text-2xl font-semibold text-warm-900 mb-6">Choisissez votre hôtel et vos dates</h2>
+
+              <!-- Logged-in client chip -->
+              <div class="flex items-center gap-3 p-3 bg-primary-50 rounded-xl border border-primary-100 mb-6">
+                <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-sm uppercase">
+                  {{ client()!.fullName[0] }}
+                </div>
+                <div>
+                  <div class="text-xs text-primary-600 font-medium">Réservation pour</div>
+                  <div class="text-sm font-semibold text-warm-900">{{ client()!.fullName }}</div>
+                </div>
+              </div>
+
+              <!-- Hotel select -->
+              <div class="mb-5">
+                <label class="block text-sm font-semibold text-warm-700 mb-2">Hôtel</label>
+                <select formControlName="hotelId"
+                        class="w-full px-4 py-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                  <option [value]="null">Sélectionnez un hôtel</option>
+                  @for (hotel of hotels(); track hotel.id) {
+                    <option [value]="hotel.id">{{ hotel.name }} — {{ hotel.city }} ({{ hotel.pricePerNight | number:'1.0-0' }}€/nuit)</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Active promo badge -->
+              @if (activePromotion()) {
+                <div class="mb-5 flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
+                  <span class="text-2xl">🎉</span>
+                  <div>
+                    <div class="font-semibold text-green-800">Promotion disponible : -{{ activePromotion()!.discountPercent }}%</div>
+                    <div class="text-sm text-green-600">Code : <span class="font-mono">{{ activePromotion()!.code }}</span></div>
+                  </div>
+                </div>
+              }
+
+              <!-- Dates -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <label class="block text-sm font-semibold text-warm-700 mb-2">Arrivée</label>
+                  <input type="date" formControlName="checkInDate" [min]="today"
+                         class="w-full px-4 py-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-warm-700 mb-2">Départ</label>
+                  <input type="date" formControlName="checkOutDate" [min]="minCheckOut()"
+                         class="w-full px-4 py-3 rounded-xl border border-warm-200 bg-warm-50 text-warm-900 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                </div>
+              </div>
+
+              <!-- Price preview -->
+              @if (selectedHotel() && nights() > 0) {
+                <div class="p-5 bg-warm-50 rounded-xl border border-warm-200 mb-5">
+                  <div class="flex items-center justify-between text-sm text-warm-600 mb-2">
+                    <span>{{ selectedHotel()!.pricePerNight | number:'1.0-0' }}€ × {{ nights() }} nuit{{ nights() > 1 ? 's' : '' }}</span>
+                    <span>{{ basePrice() | number:'1.2-2' }}€</span>
+                  </div>
+                  @if (activePromotion()) {
+                    <div class="flex items-center justify-between text-sm text-green-600 mb-2">
+                      <span>Réduction (-{{ activePromotion()!.discountPercent }}%)</span>
+                      <span>-{{ basePrice() - discountedPrice() | number:'1.2-2' }}€</span>
+                    </div>
+                  }
+                  <div class="flex items-center justify-between font-bold text-warm-900 text-lg border-t border-warm-200 pt-3 mt-1">
+                    <span>Total</span>
+                    <span class="text-primary-500">{{ discountedPrice() | number:'1.2-2' }}€</span>
+                  </div>
+                </div>
+              }
+
+              <div class="flex justify-center">
+  <button type="button" (click)="goToStep2()"
+    class="px-24 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold transition-colors">
+    Continuer →
+  </button>
+</div>
+            </div>
+          }
+
+          <!-- ── STEP 2: Confirmation Summary ── -->
+          @if (step() === 2) {
+            <div class="p-8">
+              <h2 class="font-display text-2xl font-semibold text-warm-900 mb-6">Récapitulatif</h2>
+
+              <div class="space-y-4 mb-6">
+                <!-- Hotel -->
+                <div class="flex items-start gap-4 p-4 bg-warm-50 rounded-xl border border-warm-200">
+                  <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-warm-700 uppercase tracking-wider">Hôtel</div>
+                    <div class="font-semibold text-warm-900">{{ selectedHotel()?.name }}</div>
+                    <div class="text-sm text-warm-700">{{ selectedHotel()?.city }}</div>
+                  </div>
+                </div>
+
+                <!-- Dates -->
+                <div class="flex items-start gap-4 p-4 bg-warm-50 rounded-xl border border-warm-200">
+                  <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-warm-700 uppercase tracking-wider">Séjour</div>
+                    <div class="font-semibold text-warm-900">
+                      {{ form.get('checkInDate')?.value | date:'dd/MM/yyyy' }}
+                      → {{ form.get('checkOutDate')?.value | date:'dd/MM/yyyy' }}
+                    </div>
+                    <div class="text-sm text-warm-700">{{ nights() }} nuit{{ nights() > 1 ? 's' : '' }}</div>
+                  </div>
+                </div>
+
+                <!-- Client (from session) -->
+                <div class="flex items-start gap-4 p-4 bg-primary-50 rounded-xl border border-primary-100">
+                  <div class="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-xs text-primary-600 uppercase tracking-wider font-medium">Réservé par</div>
+                    <div class="font-semibold text-warm-900">{{ client()!.fullName }}</div>
+                    <div class="text-sm text-warm-700">{{ client()!.email }} · {{ client()!.phone }}</div>
+                  </div>
+                </div>
+
+                <!-- Price -->
+                <div class="p-4 bg-primary-50 rounded-xl border border-primary-100">
+                  @if (activePromotion()) {
+                    <div class="flex justify-between text-sm text-warm-600 mb-1">
+                      <span>Sous-total</span>
+                      <span>{{ basePrice() | number:'1.2-2' }}€</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-green-600 mb-2">
+                      <span>Promo {{ activePromotion()!.code }} (-{{ activePromotion()!.discountPercent }}%)</span>
+                      <span>-{{ (basePrice() - discountedPrice()) | number:'1.2-2' }}€</span>
+                    </div>
+                  }
+                  <div class="flex justify-between font-bold text-warm-900 text-xl">
+                    <span>Total à payer</span>
+                    <span class="text-primary-500">{{ discountedPrice() | number:'1.2-2' }}€</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button type="button" (click)="step.set(1)"
+                        class="flex-1 py-4 border-2 border-warm-300 text-warm-600 rounded-xl font-semibold hover:bg-warm-100 transition-colors">
+                  ← Retour
+                </button>
+                <button type="button" (click)="confirm()" [disabled]="loading()"
+                        class="flex-1 py-4 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
+                  @if (loading()) {
+                    <span class="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                  }
+                  Confirmer la réservation
+                </button>
+              </div>
+            </div>
+          }
+
+        </form>
+      </div>
+    }
+  </div>
+</div>
+
+<app-footer />
