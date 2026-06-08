@@ -1,16 +1,10 @@
 pipeline {
     agent any
 
-    properties {
-        githubProjectProperty(projectUrlStr: 'https://github.com/akrtyassine/hotel-agence/')
-        throttleJobProperty(
-            categories: ['hotel-agence'],
-            throttleEnabled: true,
-            throttleOption: 'project',
-            maxConcurrentPerNode: 1,
-            maxConcurrentTotal: 1
-        )
-    }
+    // Note: the 'properties' top-level block is deprecated in this Declarative
+    // pipeline version. Configure the GitHub project link and throttling in
+    // the Jenkins job configuration (Job > Configure) or use a scripted
+    // `properties(...)` step if necessary.
 
     options {
         timestamps()
