@@ -32,13 +32,24 @@ pipeline {
             }
         }
 
+        stage('Gradle Debug') {
+            steps {
+                dir('hotelagencebackend-master') {
+                    echo '🧪 Diagnostics Gradle et Java'
+                    bat 'java -version'
+                    bat 'gradlew.bat --version'
+                    bat 'gradlew.bat tasks'
+                }
+            }
+        }
+
         stage('Build Backend') {
             steps {
                 echo '🔨 Build du backend Spring Boot...'
                 dir('hotelagencebackend-master') {
                     bat '''
                         REM Use Gradle wrapper for Windows
-                        call gradlew.bat clean bootJar --no-daemon
+                        call gradlew.bat clean bootJar --no-daemon --console=plain
                     '''
                 }
             }
