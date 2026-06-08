@@ -36,9 +36,9 @@ pipeline {
             steps {
                 echo '🔨 Build du backend Spring Boot...'
                 dir('hotelagencebackend-master') {
-                    sh '''
-                        chmod +x gradlew
-                        ./gradlew clean bootJar --no-daemon
+                    bat '''
+                        REM Use Gradle wrapper for Windows
+                        call gradlew.bat clean bootJar --no-daemon
                     '''
                 }
             }
@@ -48,7 +48,8 @@ pipeline {
             steps {
                 echo '🔨 Build du frontend Angular...'
                 dir('Modern-Booking-master') {
-                    sh '''
+                    bat '''
+                        REM Install Node dependencies and build (Windows)
                         npm install
                         npm run build
                     '''
@@ -59,9 +60,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo '🐳 Build des images Docker...'
-                sh '''
-                    docker build -t ${IMAGE_BACKEND_LATEST} -t ${IMAGE_BACKEND} ./hotelagencebackend-master
-                    docker build -t ${IMAGE_FRONTEND_LATEST} -t ${IMAGE_FRONTEND} ./Modern-Booking-master
+                bat '''
+                    REM Build Docker images on Windows
+                    docker build -t %IMAGE_BACKEND_LATEST% -t %IMAGE_BACKEND% .\\hotelagencebackend-master
+                    docker build -t %IMAGE_FRONTEND_LATEST% -t %IMAGE_FRONTEND% .\\Modern-Booking-master
                 '''
             }
         }
@@ -70,8 +72,9 @@ pipeline {
             steps {
                 echo '🧪 Exécution des tests...'
                 dir('hotelagencebackend-master') {
-                    sh '''
-                        ./gradlew test --no-daemon || true
+                    bat '''
+                        REM Run tests using Gradle wrapper on Windows and do not fail the pipeline on test failures
+                        call gradlew.bat test --no-daemon || exit /b 0
                     '''
                 }
             }
@@ -80,9 +83,10 @@ pipeline {
         stage('Docker Compose - Start Services') {
             steps {
                 echo '🚀 Lancement des services avec Docker Compose...'
-                sh '''
+                bat '''
+                    REM Start services with Docker Compose on Windows
                     docker compose up -d
-                    sleep 10
+                    timeout /T 10 /NOBREAK
                 '''
             }
         }
@@ -90,12 +94,11 @@ pipeline {
         stage('Health Check') {
             steps {
                 echo '✅ Vérification de la santé des services...'
-                sh '''
-                    echo "Vérification du backend..."
-                    curl -f http://localhost:8082 || true
-                    echo "\\nVérification du frontend..."
-                    curl -f http://localhost:4000 || true
-                    echo "\\nServices lancés avec succès"
+                bat '''
+                    REM Health checks using PowerShell on Windows
+                    powershell -Command "try { Invoke-WebRequest -UseBasicParsing -Uri 'http://localhost:8082' -TimeoutSec 5; Write-Host 'Backend OK' } catch { Write-Host 'Backend failed'; exit 1 }"
+                    powershell -Command "try { Invoke-WebRequest -UseBasicParsing -Uri 'http://localhost:4000' -TimeoutSec 5; Write-Host 'Frontend OK' } catch { Write-Host 'Frontend failed'; exit 1 }"
+                    echo Services lancés avec succès
                 '''
             }
         }
@@ -103,8 +106,8 @@ pipeline {
         stage('Generate Reports') {
             steps {
                 echo '📊 Génération des rapports...'
-                sh '''
-                    echo "Versions des outils:"
+                bat '''
+                    echo Versions des outils:
                     docker --version
                     git --version
                 '''
@@ -115,16 +118,17 @@ pipeline {
     post {
         always {
             echo '🧹 Nettoyage...'
-            sh '''
-                docker compose down || true
+            bat '''
+                REM Stop and remove Docker Compose services on Windows
+                docker compose down || exit /b 0
             '''
         }
 
         success {
             echo '✅ Pipeline exécuté avec succès !'
-            sh '''
-                echo "Images Docker créées:"
-                docker images | grep hotel-agence
+            bat '''
+                echo Images Docker créées:
+                docker images | findstr hotel-agence
             '''
         }
 
