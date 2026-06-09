@@ -39,7 +39,7 @@ pipeline {
             steps {
                 dir('Modern-Booking-master') {
                     bat '''
-                        npm ci
+                        npm install
                         npm run build
                     '''
                 }
@@ -71,9 +71,14 @@ pipeline {
                     docker compose down
                     docker compose up -d
                 '''
+            }
+        }
 
+        stage('Wait For Startup') {
+            steps {
                 powershell '''
-                    Start-Sleep -Seconds 15
+                    Write-Host "Attente du démarrage des services..."
+                    Start-Sleep -Seconds 45
                 '''
             }
         }
@@ -81,21 +86,30 @@ pipeline {
         stage('Health Check') {
             steps {
                 powershell '''
+                    Write-Host "=== Containers ==="
+                    docker ps
+
+                    Write-Host "=== Backend Check ==="
+
                     try {
-                        Invoke-WebRequest http://localhost:8082 -UseBasicParsing -TimeoutSec 10
-                        Write-Host "Backend OK"
+                        Invoke-WebRequest -Uri "http://localhost:8082" -UseBasicParsing -TimeoutSec 15
+                        Write-Host "✅ Backend OK"
                     }
                     catch {
-                        Write-Host "Backend indisponible"
+                        Write-Host "❌ Backend indisponible"
+                        docker logs pipelinescriptfromscm-backend-1
                         exit 1
                     }
 
+                    Write-Host "=== Frontend Check ==="
+
                     try {
-                        Invoke-WebRequest http://localhost:4000 -UseBasicParsing -TimeoutSec 10
-                        Write-Host "Frontend OK"
+                        Invoke-WebRequest -Uri "http://localhost:4000" -UseBasicParsing -TimeoutSec 15
+                        Write-Host "✅ Frontend OK"
                     }
                     catch {
-                        Write-Host "Frontend indisponible"
+                        Write-Host "❌ Frontend indisponible"
+                        docker logs pipelinescriptfromscm-frontend-1
                         exit 1
                     }
                 '''
@@ -105,8 +119,12 @@ pipeline {
         stage('Reports') {
             steps {
                 bat '''
+                    echo ===== Versions =====
+                    java -version
                     docker --version
                     git --version
+                    node --version
+                    npm --version
                 '''
             }
         }
@@ -115,14 +133,32 @@ pipeline {
     post {
 
         success {
-            echo '✅ Pipeline exécuté avec succès'
+            echo '✅ Pipeline exécuté avec succès !'
+
+            bat '''
+                echo ===== Images Docker =====
+                docker images | findstr hotel-agence
+            '''
         }
 
         failure {
-            echo '❌ Pipeline échoué'
+            echo '❌ Pipeline échoué !'
+
+            bat '''
+                echo ===== Containers =====
+                docker ps -a
+
+                echo ===== Backend Logs =====
+                docker logs pipelinescriptfromscm-backend-1
+
+                echo ===== Frontend Logs =====
+                docker logs pipelinescriptfromscm-frontend-1
+            '''
         }
 
         always {
+            echo '🧹 Nettoyage Docker'
+
             bat '''
                 docker compose down
             '''
