@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Gradle Debug') {
+            steps {
+                dir('hotelagencebackend-master') {
+                    bat 'java -version'
+                    bat 'gradlew.bat --version'
+                    bat 'gradlew.bat tasks'
+                }
+            }
+        }
+    }
+}
