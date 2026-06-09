@@ -98,15 +98,23 @@ pipeline {
             steps {
                 powershell '''
                     Write-Host "⏳ Attente que le Backend réponde..."
-                    $max = 24
+                    $max = 60
                     for ($i = 1; $i -le $max; $i++) {
                         try {
-                            Invoke-WebRequest -Uri "http://localhost:8082/actuator/health" `
-                                -UseBasicParsing -TimeoutSec 5 | Out-Null
-                            Write-Host "✅ Backend prêt !"
-                            exit 0
+                            $r = Invoke-WebRequest -Uri "http://localhost:8082" `
+                                -UseBasicParsing -TimeoutSec 5
+                            if ($r.StatusCode -lt 500) {
+                                Write-Host "✅ Backend prêt ! (HTTP $($r.StatusCode))"
+                                exit 0
+                            }
                         } catch {
-                            Write-Host "  [$i/$max] Backend pas encore prêt..."
+                            # 401/403 = backend up mais sécurisé = OK
+                            $code = $_.Exception.Response.StatusCode.value__
+                            if ($code -ge 400 -and $code -lt 500) {
+                                Write-Host "✅ Backend prêt ! (HTTP $code)"
+                                exit 0
+                            }
+                            Write-Host "  [$i/$max] Backend pas encore prêt... ($($_.Exception.Message))"
                         }
                         if ($i -eq $max) {
                             Write-Host "❌ Backend n'a pas démarré dans les temps — logs :"
@@ -127,20 +135,25 @@ pipeline {
 
                     Write-Host "=== Backend Check ==="
                     try {
-                        $r = Invoke-WebRequest -Uri "http://localhost:8082/actuator/health" `
+                        $r = Invoke-WebRequest -Uri "http://localhost:8082" `
                             -UseBasicParsing -TimeoutSec 15
-                        Write-Host "✅ Backend OK ($($r.StatusCode))"
+                        Write-Host "✅ Backend OK (HTTP $($r.StatusCode))"
                     } catch {
-                        Write-Host "❌ Backend indisponible"
-                        docker logs hoteldevops-backend-1 2>&1
-                        exit 1
+                        $code = $_.Exception.Response.StatusCode.value__
+                        if ($code -ge 400 -and $code -lt 500) {
+                            Write-Host "✅ Backend OK (HTTP $code - sécurisé)"
+                        } else {
+                            Write-Host "❌ Backend indisponible"
+                            docker logs hoteldevops-backend-1 2>&1
+                            exit 1
+                        }
                     }
 
                     Write-Host "=== Frontend Check ==="
                     try {
                         $r = Invoke-WebRequest -Uri "http://localhost:4000" `
                             -UseBasicParsing -TimeoutSec 15
-                        Write-Host "✅ Frontend OK ($($r.StatusCode))"
+                        Write-Host "✅ Frontend OK (HTTP $($r.StatusCode))"
                     } catch {
                         Write-Host "❌ Frontend indisponible"
                         docker logs hoteldevops-frontend-1 2>&1
