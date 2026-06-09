@@ -18,8 +18,6 @@ pipeline {
 
     environment {
         REGISTRY = 'docker.io'
-        IMAGE_BACKEND = 'hotel-agence-backend:${BUILD_NUMBER}'
-        IMAGE_FRONTEND = 'hotel-agence-frontend:${BUILD_NUMBER}'
         IMAGE_BACKEND_LATEST = 'hotel-agence-backend:latest'
         IMAGE_FRONTEND_LATEST = 'hotel-agence-frontend:latest'
     }
@@ -73,8 +71,8 @@ pipeline {
                 echo '🐳 Build des images Docker...'
                 bat '''
                     REM Build Docker images on Windows
-                    docker build -t %IMAGE_BACKEND_LATEST% -t %IMAGE_BACKEND% .\\hotelagencebackend-master
-                    docker build -t %IMAGE_FRONTEND_LATEST% -t %IMAGE_FRONTEND% .\\Modern-Booking-master
+                    docker build -t %IMAGE_BACKEND_LATEST% -t hotel-agence-backend:%BUILD_NUMBER% .\hotelagencebackend-master
+                    docker build -t %IMAGE_FRONTEND_LATEST% -t hotel-agence-frontend:%BUILD_NUMBER% .\Modern-Booking-master
                 '''
             }
         }
