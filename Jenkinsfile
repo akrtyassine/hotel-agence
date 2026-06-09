@@ -10,8 +10,8 @@ pipeline {
     }
 
     environment {
-        IMAGE_BACKEND       = "hotel-agence-backend:${BUILD_NUMBER}"
-        IMAGE_FRONTEND      = "hotel-agence-frontend:${BUILD_NUMBER}"
+        IMAGE_BACKEND         = "hotel-agence-backend:${BUILD_NUMBER}"
+        IMAGE_FRONTEND        = "hotel-agence-frontend:${BUILD_NUMBER}"
         IMAGE_BACKEND_LATEST  = "hotel-agence-backend:latest"
         IMAGE_FRONTEND_LATEST = "hotel-agence-frontend:latest"
         COMPOSE_PROJECT_NAME  = "hoteldevops"
@@ -45,20 +45,20 @@ pipeline {
             }
         }
 
+        stage('Tests') {
+            steps {
+                dir('hotelagencebackend-master') {
+                    bat 'call gradlew.bat test --no-daemon'
+                }
+            }
+        }
+
         stage('Build Docker Images') {
             steps {
                 bat '''
                     docker build -t %IMAGE_BACKEND% -t %IMAGE_BACKEND_LATEST% hotelagencebackend-master
                     docker build -t %IMAGE_FRONTEND% -t %IMAGE_FRONTEND_LATEST% Modern-Booking-master
                 '''
-            }
-        }
-
-        stage('Tests') {
-            steps {
-                dir('hotelagencebackend-master') {
-                    bat 'call gradlew.bat test --no-daemon'
-                }
             }
         }
 
@@ -84,8 +84,8 @@ pipeline {
                             exit 0
                         }
                         if ($i -eq $max) {
-                            Write-Host "❌ MySQL n'a pas démarré dans les temps"
-                            docker logs hoteldevops-db-1
+                            Write-Host "❌ MySQL n'a pas démarré dans les temps — logs :"
+                            docker logs hoteldevops-db-1 2>&1
                             exit 1
                         }
                         Start-Sleep -Seconds 5
@@ -108,11 +108,13 @@ pipeline {
                         } catch {
                             Write-Host "  [$i/$max] Backend pas encore prêt..."
                         }
+                        if ($i -eq $max) {
+                            Write-Host "❌ Backend n'a pas démarré dans les temps — logs :"
+                            docker logs hoteldevops-backend-1 2>&1
+                            exit 1
+                        }
                         Start-Sleep -Seconds 5
                     }
-                    Write-Host "❌ Backend n'a pas démarré dans les temps"
-                    docker logs hoteldevops-backend-1
-                    exit 1
                 '''
             }
         }
@@ -130,7 +132,7 @@ pipeline {
                         Write-Host "✅ Backend OK ($($r.StatusCode))"
                     } catch {
                         Write-Host "❌ Backend indisponible"
-                        docker logs hoteldevops-backend-1
+                        docker logs hoteldevops-backend-1 2>&1
                         exit 1
                     }
 
@@ -141,7 +143,7 @@ pipeline {
                         Write-Host "✅ Frontend OK ($($r.StatusCode))"
                     } catch {
                         Write-Host "❌ Frontend indisponible"
-                        docker logs hoteldevops-frontend-1
+                        docker logs hoteldevops-frontend-1 2>&1
                         exit 1
                     }
                 '''
@@ -157,6 +159,12 @@ pipeline {
                     git --version
                     node --version
                     npm --version
+
+                    echo ===== Images Docker =====
+                    docker images | findstr hotel-agence
+
+                    echo ===== Containers actifs =====
+                    docker ps
                 '''
             }
         }
@@ -165,7 +173,6 @@ pipeline {
     post {
         success {
             echo '✅ Pipeline exécuté avec succès !'
-            bat 'docker images | findstr hotel-agence'
         }
 
         failure {
@@ -174,11 +181,12 @@ pipeline {
                 Write-Host "=== Containers ==="
                 docker ps -a
                 Write-Host "=== DB Logs ==="
-                docker logs hoteldevops-db-1      2>&1
+                docker logs hoteldevops-db-1 2>&1
                 Write-Host "=== Backend Logs ==="
                 docker logs hoteldevops-backend-1 2>&1
                 Write-Host "=== Frontend Logs ==="
                 docker logs hoteldevops-frontend-1 2>&1
+                exit 0
             '''
         }
 

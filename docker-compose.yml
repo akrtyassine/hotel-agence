@@ -9,15 +9,20 @@ services:
     ports:
       - "3306:3306"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
 
   backend:
-    build:
-      context: ./hotelagencebackend-master
     image: hotel-agence-backend:latest
     ports:
       - "8082:8082"
     depends_on:
-      - db
+      db:
+        condition: service_healthy        # ← attend que MySQL soit vraiment prêt
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/hoteldb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
@@ -26,13 +31,12 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: ./Modern-Booking-master
     image: hotel-agence-frontend:latest
     ports:
       - "4000:4000"
     depends_on:
-      - backend
+      backend:
+        condition: service_started        # frontend démarre dès que backend est lancé
     restart: unless-stopped
 
 volumes:
